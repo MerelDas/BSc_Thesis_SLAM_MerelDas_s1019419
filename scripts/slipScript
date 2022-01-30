@@ -1,0 +1,71 @@
+#!/bin/bash
+#connect to X Server XLaunch to show view of the mapping in rviz
+export DISPLAY=$(awk '/nameserver / {print $2; exit}' /etc/resolv.conf 2>/dev/null):0
+#source environment setup files to access ROS commands
+source /home/mereldas/catkin_ws/devel/setup.bash
+#point to directories where Gazebo will search for models
+export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/opt/ros/noetic/turtlebot3_simulations/turtlebot3_gazebo/models
+#set which turtlebot model to use there's burger, waffle & waffle_pi
+export TURTLEBOT3_MODEL=burger
+
+#kill all processes with ^C
+trap terminate SIGINT
+terminate(){
+    pkill -SIGINT -P $$
+    exit
+}
+
+#specify which worlds (layout) to map
+WORLDS="office half_square"
+#the world name that is currently in the gazebo launch file
+OLDWORLD="complicated_noGaps"
+#values for mu and mu2
+VALS="0\.1" #1  0\.8 0\.5 0\.3 0\.1 0\.08 0\.05
+
+for WORLDNAME in $WORLDS; do  #loop through worlds
+  #replace name in launch file to launch right world
+  sed -i -e "s/$OLDWORLD/$WORLDNAME/g" ~/catkin_ws/src/turtlebot3_simulations/turtlebot3_gazebo/launch/turtlebot3_empty_world.launch
+for VAL in $VALS; do     #loop through slipperiness levels
+    #replace old values with new values in file of the right world
+    OLDLINE1="<mu>.*<\/mu> <!--slip-->"
+    OLDLINE2="<mu2>.*<\/mu2> <!--slip-->"
+    NEWLINE1="<mu>$VAL<\/mu> <!--slip-->"
+    NEWLINE2="<mu2>$VAL<\/mu2> <!--slip-->"
+    sed -i -e "s/$OLDLINE1/$NEWLINE1/g" ~/catkin_ws/src/turtlebot3_simulations/turtlebot3_gazebo/worlds/$WORLDNAME.world
+    sed -i -e "s/$OLDLINE2/$NEWLINE2/g" ~/catkin_ws/src/turtlebot3_simulations/turtlebot3_gazebo/worlds/$WORLDNAME.world
+
+    #launch gazebo
+    timeout 11m roslaunch turtlebot3_gazebo turtlebot3_empty_world.launch &
+    sleep 5s
+    #launch gmapping
+    timeout 11m roslaunch turtlebot3_slam turtlebot3_slam.launch slam_methods:=gmapping &
+    sleep 5s
+    #alternately launch  exploring and random navigation behaviour
+    timeout 11m roslaunch turtlebot3_navigation move_base.launch &
+    sleep 5s
+    #alternately launch  exploring (explore_lite) and random navigation (turtlebot3_gazebo) behaviour
+    timeout 2m roslaunch explore_lite explore.launch &
+    sleep 2m
+    timeout 30s roslaunch turtlebot3_gazebo turtlebot3_simulation.launch &
+    sleep 30s
+    timeout 2m roslaunch explore_lite explore.launch &
+    sleep 2m
+    timeout 2m roslaunch turtlebot3_gazebo turtlebot3_simulation.launch &
+    sleep 2m
+    timeout 3m roslaunch explore_lite explore.launch &
+    sleep 3m
+    timeout 90s roslaunch turtlebot3_gazebo turtlebot3_simulation.launch &
+    sleep 60s
+    #timeout 150s roslaunch explore_lite explore.launch &
+    #sleep 30s
+    #save time
+    TIMESTAMP=$(date +%s)
+    #save map with unique name according to layout, stddev and timestamp
+    MAPNAME=$WORLDNAME-"ODOM"-$TIMESTAMP #$VAL
+    rosrun map_server map_saver -f ~/maps/$MAPNAME
+    wait
+
+    #specify which world is now in launch file for next loop
+    OLDWORLD=$WORLDNAME
+  done
+done

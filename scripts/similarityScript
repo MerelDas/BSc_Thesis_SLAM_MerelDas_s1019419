@@ -1,0 +1,30 @@
+#!/bin/bash
+#script to evaluate the slam maps based on the ground truth maps
+#kill all processes with ^C
+trap terminate SIGINT
+terminate(){
+    pkill -SIGINT -P $$
+    exit
+}
+
+#specify which world (layout) to compare the maps for, names are shortened
+WORLDS="long_hallway base_square half_square" #complicated_noGaps office simple_maze base_square half_square small_office quarter_maze three_hallways triangle cafe blocks meeting_room circles half_half weird_shapes cubicles simple_offices just_blocks apartment long_hallway" 
+
+#stddevs for laser noise (00 = 0.00 and 10=0.10)
+DEVS="00 01 03 05 10 20"
+
+#specify which similarity metrics to use
+METRICS="ssim fsim"
+
+for METRIC in $METRICS; do #loop through similarity metrics
+  for STDDEV in $DEVS; do      #loop through stddevs of gaussian noise laser
+    for WORLDNAME in $WORLDS; do   #loop through worlds
+      #run the similarity measure and save the output
+      OUTPUT=$(image-similarity-measures --org_img_path=/home/mereldas/maps/complete/binary/bin-$WORLDNAME-g.png --pred_img_path=/home/mereldas/maps/complete/binary/bin-$WORLDNAME$STDDEV.png --metric=$METRIC)
+      #only keep the similarity score from the output
+      SCORE=$(echo $OUTPUT | grep -Eo '[0-9]+([.][0-9]+)')
+      #redirect output of interest to separate file
+      echo $METRIC $STDDEV $WORLDNAME $SCORE >> similarities4.txt
+    done
+  done
+done
