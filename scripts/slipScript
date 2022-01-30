@@ -16,11 +16,11 @@ terminate(){
 }
 
 #specify which worlds (layout) to map
-WORLDS="office half_square"
+WORLDS="complicated_noGaps office simple_maze base_square half_square small_office quarter_maze three_hallways triangle cafe blocks meeting_room circles half_half weird_shapes cubicles simple_offices just_blocks apartment long_hallway"
 #the world name that is currently in the gazebo launch file
 OLDWORLD="complicated_noGaps"
 #values for mu and mu2
-VALS="0\.1" #1  0\.8 0\.5 0\.3 0\.1 0\.08 0\.05
+VALS="1  0\.8 0\.5 0\.3 0\.1 0\.08 0\.05"
 
 for WORLDNAME in $WORLDS; do  #loop through worlds
   #replace name in launch file to launch right world
