@@ -16,7 +16,7 @@ terminate(){
 }
 
 #specify which world (layout) to map
-WORLDS="long_hallway" #complicated_noGaps small_office quarter_maze triangle half_half weird_shapes cubicles simple_offices apartment half_square base_square half_half weird_shapes cubicles simple_offices just_blocks apartment small_office quarter_maze three_hallways triangle cafe blocks meeting_room complicated_noGaps office half_square base_square simple_maze circles
+WORLDS="complicated_noGaps small_office quarter_maze triangle half_half weird_shapes cubicles simple_offices apartment half_square base_square half_half weird_shapes cubicles simple_offices just_blocks apartment small_office quarter_maze three_hallways triangle cafe blocks meeting_room complicated_noGaps office half_square base_square simple_maze circles
 #the world name that is currently in the gazebo launch file
 OLDWORLD="complicated_noGaps"
 #stddevs for laser noise
